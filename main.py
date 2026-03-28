@@ -20,8 +20,9 @@ def show_menu():
     print(f"  {DIM}by {MAKER}{R}\n")
     print(f"  {GOLD}[1]{R}  Terminal Chat")
     print(f"  {GOLD}[2]{R}  Telegram Bot")
-    print(f"  {GOLD}[3]{R}  Settings")
-    print(f"  {GOLD}[4]{R}  Quit\n")
+    print(f"  {GOLD}[3]{R}  Web UI")
+    print(f"  {GOLD}[4]{R}  Settings")
+    print(f"  {GOLD}[5]{R}  Quit\n")
     print(f"  {DIM}{'─' * 30}{R}\n")
     print(f"  {CYAN}Choose:{R} ", end="")
 
@@ -71,9 +72,13 @@ def main():
             run(token)
 
         elif choice == "3":
-            settings_menu()
+            from interfaces.web import run as web_run
+            web_run()
 
         elif choice == "4":
+            settings_menu()
+
+        elif choice == "5":
             cron.stop()
             print(f"\n  {GOLD}🌙 Goodbye!{R}\n")
             break
