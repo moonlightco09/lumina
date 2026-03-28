@@ -8,15 +8,15 @@ import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 sys.path.insert(0, os.path.expanduser("~/lumina"))
-from config.settings import NAME, VERSION, MAKER
+from config.settings import NAME, VERSION, MAKER, WEB_PASSWORD
 from core.agent import respond, clear_session
 from core.brain import detect_mode
 
 HTML = """<!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lumina</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,9 +34,20 @@ body { background: #0a0a0f; color: #e0e0e0; font-family: sans-serif; height: 100
 #send { background: #ffd700; color: #000; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 #clear { background: #333; color: #e0e0e0; border: none; padding: 10px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; }
 .thinking { color: #666; font-style: italic; font-size: 13px; }
+#login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 99; }
+#login h1 { color: #ffd700; font-size: 24px; }
+#login input { background: #1a1a2e; border: 1px solid #333; color: #e0e0e0; padding: 12px 20px; border-radius: 20px; font-size: 16px; outline: none; width: 260px; text-align: center; }
+#login button { background: #ffd700; color: #000; border: none; padding: 12px 32px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 16px; }
+#login-error { color: #ff4444; font-size: 13px; display: none; }
 </style>
 </head>
 <body>
+<div id="login">
+  <h1>🌙 LUMINA</h1>
+  <input id="pwd" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+  <button onclick="login()">Enter</button>
+  <span id="login-error">Wrong password</span>
+</div>
 <div id="header">
   <h1>🌙 LUMINA</h1>
   <span id="status">Loading...</span>
@@ -48,6 +59,25 @@ body { background: #0a0a0f; color: #e0e0e0; font-family: sans-serif; height: 100
   <button id="send" onclick="send()">Send</button>
 </div>
 <script>
+let authed = false;
+
+async function login() {
+  const pwd = document.getElementById('pwd').value;
+  const r = await fetch('/auth', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: pwd})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    document.getElementById('login').style.display = 'none';
+    authed = true;
+    loadStatus();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
 async function loadStatus() {
   const r = await fetch('/status');
   const d = await r.json();
@@ -98,7 +128,18 @@ async function clearChat() {
   document.getElementById('messages').innerHTML = '';
 }
 
-loadStatus();
+// Auto-login if no password set
+fetch('/auth', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({password: ''})
+}).then(r => r.json()).then(d => {
+  if (d.ok) {
+    document.getElementById('login').style.display = 'none';
+    authed = true;
+    loadStatus();
+  }
+});
 </script>
 </body>
 </html>"""
@@ -136,7 +177,12 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length)) if length else {}
 
-        if self.path == "/chat":
+        if self.path == "/auth":
+            pwd = body.get("password", "")
+            ok = (not WEB_PASSWORD) or (pwd == WEB_PASSWORD)
+            self.send_json({"ok": ok})
+
+        elif self.path == "/chat":
             message = body.get("message", "")
             future = asyncio.run_coroutine_threadsafe(
                 respond(message, "web:main"), loop
