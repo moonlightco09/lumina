@@ -54,7 +54,7 @@ pip install python-telegram-bot
 
 # 4. Run Lumina
 cd ~/lumina && python main.py
-First run will launch the setup wizard automatically.
+First run launches the setup wizard automatically.
 Setup Wizard
 On first run, Lumina asks you:
 Your Telegram user ID (get from @userinfobot)
@@ -74,23 +74,21 @@ pkg install ollama
 local
 llama-server + .gguf model
 llama.cpp + model file
-Lumina auto-detects which brain to use — API if key is set, Ollama if running, llama-server as fallback.
+Lumina auto-detects which brain to use.
 Voice Mode
-Requires Termux:API:
 pkg install termux-api
-Also install the Termux:API app from F-Droid. Then choose Voice Mode from the menu.
+Also install Termux:API app from F-Droid. Then choose [2] Voice Mode from the menu.
 Agent Commands
-In any chat interface:
 Command
 Agent
 Specialty
 (normal message)
 Lumina
 General assistant
-/research your query
+/research query
 Scout
 Research & information
-/code your task
+/code task
 Forge
 Coding & scripting
 Telegram Bot
@@ -98,33 +96,31 @@ Create a bot via @BotFather on Telegram
 Copy the token
 Choose [3] Telegram Bot from Lumina menu
 Paste the token
-Your Telegram user ID (set during setup) is the only one who can control the bot.
 Web UI
-Choose [4] Web UI from the menu, then open:
-http://127.0.0.1:7860
+Choose [4] Web UI from the menu, then open http://127.0.0.1:7860
 Project Structure
 lumina/
-├── main.py              # Entry point
+├── main.py
 ├── config/
-│   ├── settings.py      # Default settings
-│   ├── local.py         # Your personal config (not in git)
-│   └── soul.md          # Lumina's personality
+│   ├── settings.py
+│   ├── local.py        ← your personal config (not in git)
+│   └── soul.md
 ├── core/
-│   ├── agent.py         # Main agent logic
-│   ├── brain.py         # LLM handler
-│   ├── tools.py         # Tool definitions
-│   ├── memory.py        # Long-term memory
-│   ├── session.py       # Conversation history
-│   ├── compact.py       # Context compaction
-│   ├── locks.py         # Session locking
-│   ├── cron.py          # Scheduled tasks
-│   ├── agents.py        # Multi-agent routing
-│   └── setup.py         # First-run wizard
+│   ├── agent.py
+│   ├── brain.py
+│   ├── tools.py
+│   ├── memory.py
+│   ├── session.py
+│   ├── compact.py
+│   ├── locks.py
+│   ├── cron.py
+│   ├── agents.py
+│   └── setup.py
 └── interfaces/
-    ├── terminal.py      # Terminal chat
-    ├── voice.py         # Voice mode
-    ├── telegram.py      # Telegram bot
-    └── web.py           # Web dashboard
+    ├── terminal.py
+    ├── voice.py
+    ├── telegram.py
+    └── web.py
 License
 MIT — free to use, modify, and distribute.
 Made with 🌙 by Moonlight Co
