@@ -5,6 +5,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
+from core.setup import is_first_run, run_setup
 from config.settings import NAME, VERSION, MAKER
 from core import cron
 
@@ -33,28 +34,22 @@ def settings_menu():
     print(f"  {DIM}{'─' * 30}{R}\n")
     print(f"  Brain mode : {settings.BRAIN_MODE}")
     print(f"  API key    : {'Set ✅' if settings.API_KEY else 'Not set ❌'}")
+    print(f"  Telegram   : {'Locked ✅' if settings.ALLOWED_TELEGRAM_USERS else 'Open ⚠️'}")
+    print(f"  Web UI     : {'Password set ✅' if settings.WEB_PASSWORD else 'No password ⚠️'}")
     print(f"  Model      : {open(settings.MODEL_CONFIG).read().strip() if os.path.exists(settings.MODEL_CONFIG) else 'Not selected'}")
     print(f"\n  {DIM}{'─' * 30}{R}\n")
-    print(f"  {GOLD}[1]{R}  Set Claude API key")
-    print(f"  {GOLD}[2]{R}  Switch brain mode")
-    print(f"  {GOLD}[3]{R}  Back\n")
+    print(f"  {GOLD}[1]{R}  Re-run setup wizard")
+    print(f"  {GOLD}[2]{R}  Back\n")
     print(f"  {CYAN}Choose:{R} ", end="")
 
     choice = input().strip()
     if choice == "1":
-        print(f"\n  Enter Claude API key: ", end="")
-        key = input().strip()
-        settings.API_KEY = key
-        print(f"  ✅ API key set for this session.")
-        input("\n  Press Enter to continue...")
-    elif choice == "2":
-        current = settings.BRAIN_MODE
-        new_mode = "api" if current == "local" else "local"
-        settings.BRAIN_MODE = new_mode
-        print(f"\n  ✅ Brain mode switched to: {new_mode}")
-        input("\n  Press Enter to continue...")
+        run_setup()
 
 def main():
+    if is_first_run():
+        run_setup()
+
     cron.start()
 
     while True:
