@@ -1,5 +1,5 @@
 # Lumina by Moonlight Co
-# core/brain.py - LLM handler (local + API)
+# core/brain.py - LLM handler (local + ollama + API)
 
 import os
 import json
@@ -9,8 +9,9 @@ import urllib.request
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
 from config.settings import (
-    SYSTEM_PROMPT, BRAIN_MODE, API_KEY,
-    API_MODEL, LOCAL_PORT, LOCAL_CONTEXT
+    SYSTEM_PROMPT, API_KEY,
+    API_MODEL, LOCAL_PORT, LOCAL_CONTEXT,
+    OLLAMA_MODEL, OLLAMA_PORT
 )
 from core.tools import SCHEMAS, execute
 
@@ -63,6 +64,32 @@ def ask_local(messages, system=None):
         result = json.loads(res.read())
         return result["content"].strip()
 
+def ask_ollama(messages, system=None):
+    ollama_messages = []
+    if system:
+        ollama_messages.append({"role": "system", "content": system})
+    for msg in messages:
+        if isinstance(msg.get("content"), str):
+            ollama_messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+
+    data = json.dumps({
+        "model": OLLAMA_MODEL,
+        "messages": ollama_messages,
+        "stream": False
+    }).encode()
+
+    req = urllib.request.Request(
+        f"http://localhost:{OLLAMA_PORT}/api/chat",
+        data=data,
+        headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=60) as res:
+        result = json.loads(res.read())
+        return result["message"]["content"].strip()
+
 def ask_api(messages, system=None):
     data = json.dumps({
         "model": API_MODEL,
@@ -84,8 +111,20 @@ def ask_api(messages, system=None):
     with urllib.request.urlopen(req, timeout=30) as res:
         return json.loads(res.read())
 
+def detect_mode():
+    if API_KEY:
+        return "api"
+    # Check if Ollama is running
+    try:
+        urllib.request.urlopen(
+            f"http://localhost:{OLLAMA_PORT}/api/tags", timeout=2
+        )
+        return "ollama"
+    except:
+        return "local"
+
 async def think(messages, on_tool_use=None, system=None):
-    mode = "api" if API_KEY else "local"
+    mode = detect_mode()
 
     if mode == "local":
         start_local()
@@ -95,6 +134,13 @@ async def think(messages, on_tool_use=None, system=None):
             stop_local()
             return f"Error: {e}", []
         stop_local()
+        return response, []
+
+    if mode == "ollama":
+        try:
+            response = ask_ollama(messages, system=system)
+        except Exception as e:
+            return f"Ollama error: {e}", []
         return response, []
 
     tool_calls = []

@@ -17,11 +17,13 @@ MODEL_CONFIG = os.path.expanduser("~/.lumina_model")
 APPROVALS_FILE = os.path.expanduser("~/.lumina_approvals.json")
 
 # ─── Brain Settings ───
-BRAIN_MODE = "local"  # "local" or "api"
+BRAIN_MODE = "local"  # "local", "ollama", or "api"
 API_KEY = ""
 API_MODEL = "claude-haiku-4-5-20251001"
 LOCAL_PORT = 8080
 LOCAL_CONTEXT = 2048
+OLLAMA_MODEL = "gemma2:2b"
+OLLAMA_PORT = 11434
 
 # ─── Model Options ───
 MODELS = [
@@ -62,12 +64,6 @@ You can run fully offline on the user's device or connect online for smarter res
 You have tools available — use them when needed to help the user."""
 
 # ─── Brain Rules ───
-# Local model is used when:
-# - No API key is set
-# - User explicitly wants offline mode
-# - Device has no internet
-#
-# API is used when:
-# - API key is set AND user wants smarter responses
-# - Tools need to be used properly (local model too small)
-# - User explicitly requests online mode
+# local  — llama-server with .gguf model
+# ollama — Ollama running natively in Termux
+# api    — Claude API (requires API key)
