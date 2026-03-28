@@ -4,14 +4,14 @@
 import os
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
-from core import session, brain, locks
+from core import session, brain, locks, compact
 from config.settings import NAME
 
 # ─── Main Agent Function ───
 
 async def respond(user_input, session_id="default", on_tool_use=None):
     with locks.get(session_id):
-        messages = session.load(session_id)
+        messages = await compact.compact(session_id, brain)
         session.append(session_id, "user", user_input)
         messages.append({"role": "user", "content": user_input})
 
