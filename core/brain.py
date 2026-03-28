@@ -40,8 +40,8 @@ def stop_local():
         server_process.terminate()
         server_process = None
 
-def ask_local(messages):
-    prompt = f"{SYSTEM_PROMPT}\n\n"
+def ask_local(messages, system=None):
+    prompt = f"{system or SYSTEM_PROMPT}\n\n"
     for msg in messages:
         role = "You" if msg["role"] == "user" else "Lumina"
         prompt += f"{role}: {msg['content']}\n"
@@ -63,11 +63,11 @@ def ask_local(messages):
         result = json.loads(res.read())
         return result["content"].strip()
 
-def ask_api(messages):
+def ask_api(messages, system=None):
     data = json.dumps({
         "model": API_MODEL,
         "max_tokens": 1024,
-        "system": SYSTEM_PROMPT,
+        "system": system or SYSTEM_PROMPT,
         "tools": SCHEMAS,
         "messages": messages
     }).encode()
@@ -84,13 +84,13 @@ def ask_api(messages):
     with urllib.request.urlopen(req, timeout=30) as res:
         return json.loads(res.read())
 
-async def think(messages, on_tool_use=None):
+async def think(messages, on_tool_use=None, system=None):
     mode = "api" if API_KEY else "local"
 
     if mode == "local":
         start_local()
         try:
-            response = ask_local(messages)
+            response = ask_local(messages, system=system)
         except Exception as e:
             stop_local()
             return f"Error: {e}", []
@@ -99,7 +99,7 @@ async def think(messages, on_tool_use=None):
 
     tool_calls = []
     for _ in range(10):
-        response = ask_api(messages)
+        response = ask_api(messages, system=system)
         content = response.get("content", [])
         stop_reason = response.get("stop_reason", "")
 

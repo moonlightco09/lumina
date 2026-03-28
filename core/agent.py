@@ -4,35 +4,41 @@
 import os
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
-from core import session, brain, locks, compact
-from config.settings import NAME
+from core import session, brain, locks, compact, agents
 
 # ─── Main Agent Function ───
 
 async def respond(user_input, session_id="default", on_tool_use=None):
-    with locks.get(session_id):
-        messages = await compact.compact(session_id, brain)
-        session.append(session_id, "user", user_input)
-        messages.append({"role": "user", "content": user_input})
+    agent_id, message = agents.resolve(user_input)
+    agent = agents.get(agent_id)
+    sid = agents.session_key(agent_id, session_id)
+
+    with locks.get(sid):
+        messages = await compact.compact(sid, brain)
+        session.append(sid, "user", message)
+        messages.append({"role": "user", "content": message})
 
         response, tools_used = await brain.think(
             messages,
-            on_tool_use=on_tool_use
+            on_tool_use=on_tool_use,
+            system=agent["soul"]
         )
 
         if str(response).startswith("NEEDS_APPROVAL:"):
             cmd = response.split(":", 1)[1]
-            session.append(session_id, "assistant", f"Needs approval for: {cmd}")
+            session.append(sid, "assistant", f"Needs approval for: {cmd}")
             return {
                 "type": "needs_approval",
                 "command": cmd,
+                "agent": agent["name"],
                 "message": f"⚠️ I need permission to run:\n`{cmd}`\n\nReply /approve to allow or /deny to block."
             }
 
-        session.append(session_id, "assistant", response)
+        session.append(sid, "assistant", response)
         return {
             "type": "response",
             "message": response,
+            "agent": agent["name"],
             "tools_used": tools_used
         }
 
