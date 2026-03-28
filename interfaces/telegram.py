@@ -8,17 +8,23 @@ import logging
 sys.path.insert(0, os.path.expanduser("~/lumina"))
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from config.settings import NAME, MAKER, API_KEY
+from config.settings import NAME, MAKER, API_KEY, ALLOWED_TELEGRAM_USERS
 from core.agent import respond, approve_command, deny_command, clear_session
 
 logging.basicConfig(level=logging.WARNING)
 
-# ─── Pending approvals per user ───
 pending = {}
 
-# ─── Handlers ───
+def is_allowed(update: Update):
+    user_id = str(update.effective_user.id)
+    return user_id in ALLOWED_TELEGRAM_USERS
+
+async def blocked(update: Update):
+    await update.message.reply_text("⛔ Unauthorized.")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     await update.message.reply_text(
         f"🌙 Hello! I'm {NAME} by {MAKER}.\n\n"
         f"I'm your personal AI assistant.\n"
@@ -32,15 +38,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     brain = "Online (Claude API)" if API_KEY else "Offline (Local Model)"
     await update.message.reply_text(f"🧠 Current brain: {brain}")
 
 async def new(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     user_id = str(update.effective_user.id)
     clear_session(f"telegram:{user_id}")
     await update.message.reply_text("🌙 Session cleared! Starting fresh.")
 
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     user_id = str(update.effective_user.id)
     if user_id in pending:
         cmd = pending.pop(user_id)
@@ -50,6 +62,8 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No pending command to approve.")
 
 async def deny(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     user_id = str(update.effective_user.id)
     if user_id in pending:
         cmd = pending.pop(user_id)
@@ -59,6 +73,8 @@ async def deny(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No pending command to deny.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_allowed(update):
+        return await blocked(update)
     user_id = str(update.effective_user.id)
     user_input = update.message.text
     session_id = f"telegram:{user_id}"
@@ -75,8 +91,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(result["message"])
     else:
         await update.message.reply_text(result["message"])
-
-# ─── Run Bot ───
 
 def run(token):
     app = Application.builder().token(token).build()

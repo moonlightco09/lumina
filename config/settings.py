@@ -67,3 +67,7 @@ You have tools available — use them when needed to help the user."""
 # local  — llama-server with .gguf model
 # ollama — Ollama running natively in Termux
 # api    — Claude API (requires API key)
+
+# ─── Security ───
+ALLOWED_TELEGRAM_USERS = ["6116628818"]
+WEB_PASSWORD = ""  # Set a password to protect Web UI
