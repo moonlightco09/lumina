@@ -20,10 +20,11 @@ def show_menu():
     print(f"\n  {GOLD}{BOLD}🌙  L U M I N A  v{VERSION}{R}")
     print(f"  {DIM}by {MAKER}{R}\n")
     print(f"  {GOLD}[1]{R}  Terminal Chat")
-    print(f"  {GOLD}[2]{R}  Telegram Bot")
-    print(f"  {GOLD}[3]{R}  Web UI")
-    print(f"  {GOLD}[4]{R}  Settings")
-    print(f"  {GOLD}[5]{R}  Quit\n")
+    print(f"  {GOLD}[2]{R}  Voice Mode")
+    print(f"  {GOLD}[3]{R}  Telegram Bot")
+    print(f"  {GOLD}[4]{R}  Web UI")
+    print(f"  {GOLD}[5]{R}  Settings")
+    print(f"  {GOLD}[6]{R}  Quit\n")
     print(f"  {DIM}{'─' * 30}{R}\n")
     print(f"  {CYAN}Choose:{R} ", end="")
 
@@ -61,19 +62,23 @@ def main():
             terminal_main()
 
         elif choice == "2":
+            from interfaces.voice import main as voice_main
+            voice_main()
+
+        elif choice == "3":
             print(f"\n  Enter Telegram bot token: ", end="")
             token = input().strip()
             from interfaces.telegram import run
             run(token)
 
-        elif choice == "3":
+        elif choice == "4":
             from interfaces.web import run as web_run
             web_run()
 
-        elif choice == "4":
+        elif choice == "5":
             settings_menu()
 
-        elif choice == "5":
+        elif choice == "6":
             cron.stop()
             print(f"\n  {GOLD}🌙 Goodbye!{R}\n")
             break
