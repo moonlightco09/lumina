@@ -6,6 +6,7 @@ import os
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
 from config.settings import NAME, VERSION, MAKER
+from core import cron
 
 R    = "\033[0m"
 GOLD = "\033[93m"
@@ -53,6 +54,8 @@ def settings_menu():
         input("\n  Press Enter to continue...")
 
 def main():
+    cron.start()
+
     while True:
         show_menu()
         choice = input().strip()
@@ -71,6 +74,7 @@ def main():
             settings_menu()
 
         elif choice == "4":
+            cron.stop()
             print(f"\n  {GOLD}🌙 Goodbye!{R}\n")
             break
 
