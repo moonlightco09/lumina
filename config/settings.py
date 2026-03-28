@@ -2,6 +2,8 @@
 # config/settings.py - all settings in one place
 
 import os
+import sys
+sys.path.insert(0, os.path.expanduser("~/lumina"))
 
 # ─── Identity ───
 NAME = "Lumina"
@@ -17,13 +19,17 @@ MODEL_CONFIG = os.path.expanduser("~/.lumina_model")
 APPROVALS_FILE = os.path.expanduser("~/.lumina_approvals.json")
 
 # ─── Brain Settings ───
-BRAIN_MODE = "local"  # "local", "ollama", or "api"
+BRAIN_MODE = "local"
 API_KEY = ""
 API_MODEL = "claude-haiku-4-5-20251001"
 LOCAL_PORT = 8080
 LOCAL_CONTEXT = 2048
 OLLAMA_MODEL = "gemma2:2b"
 OLLAMA_PORT = 11434
+
+# ─── Security defaults ───
+ALLOWED_TELEGRAM_USERS = []
+WEB_PASSWORD = ""
 
 # ─── Model Options ───
 MODELS = [
@@ -63,11 +69,10 @@ You never mention other AI systems like ChatGPT or Gemini.
 You can run fully offline on the user's device or connect online for smarter responses.
 You have tools available — use them when needed to help the user."""
 
-# ─── Brain Rules ───
-# local  — llama-server with .gguf model
-# ollama — Ollama running natively in Termux
-# api    — Claude API (requires API key)
-
-# ─── Security ───
-ALLOWED_TELEGRAM_USERS = ["6116628818"]
-WEB_PASSWORD = ""  # Set a password to protect Web UI
+# ─── Load personal config (overrides defaults) ───
+try:
+    from config.local import *
+    if TELEGRAM_USER_ID:
+        ALLOWED_TELEGRAM_USERS = [str(TELEGRAM_USER_ID)]
+except ImportError:
+    pass

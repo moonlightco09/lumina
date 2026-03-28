@@ -1,0 +1,7 @@
+# Lumina by Moonlight Co
+# config/local.py - YOUR personal settings (never committed to git)
+# Copy this file to config/local.py and fill in your details
+
+TELEGRAM_USER_ID = ""   # Your Telegram user ID (get from @userinfobot)
+WEB_PASSWORD = ""       # Password for Web UI (leave empty for no password)
+API_KEY = ""            # Claude API key (leave empty for local/ollama mode)

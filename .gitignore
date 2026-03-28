@@ -1,4 +1,10 @@
-data/
+# Python
 __pycache__/
 *.pyc
 *.gguf
+
+# Lumina personal config
+config/local.py
+data/
+~/.lumina_model
+~/.lumina_approvals.json
