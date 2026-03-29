@@ -6,10 +6,11 @@ import sys
 import asyncio
 import urllib.request
 sys.path.insert(0, os.path.expanduser("~/lumina"))
-from config.settings import NAME, VERSION, MAKER, MODELS, MODEL_CONFIG, BRAIN_MODE, API_KEY
+from config.settings import NAME, VERSION, MAKER, MODELS, MODEL_CONFIG, API_KEY
 from core.agent import respond, approve_command, deny_command, clear_session
+from core.agents import handle_skill_command
+from core.skills import install
 
-# ─── Colors ───
 R      = "\033[0m"
 GOLD   = "\033[93m"
 WHITE  = "\033[97m"
@@ -109,9 +110,10 @@ def setup_model():
 async def chat():
     session_id = "terminal:main"
     pending_approval = None
+    pending_skill_add = None
 
     show_banner()
-    print(f"  {DIM}Type your message. Commands: /new /clear /quit{R}")
+    print(f"  {DIM}Commands: /new /clear /skills /skill add <name> /skill remove <name> /quit{R}")
     space()
     print(f"  {DIM}{'─' * 38}{R}")
 
@@ -130,29 +132,31 @@ async def chat():
         if not user_input:
             continue
 
+        # Pending skill content input
+        if pending_skill_add:
+            install(pending_skill_add, user_input)
+            space()
+            print(f"  {GREEN}✅ Skill '{pending_skill_add}' installed!{R}")
+            pending_skill_add = None
+            continue
+
         if user_input.lower() == "/quit":
             space()
             print(f"  {GOLD}🌙  Goodbye.{R}")
             space()
             break
 
-        if user_input.lower() == "/new":
+        if user_input.lower() in ["/new", "/clear"]:
             clear_session(session_id)
             show_banner()
-            print(f"  {DIM}Session cleared. Start fresh!{R}")
+            print(f"  {DIM}Session cleared!{R}")
             space()
             print(f"  {DIM}{'─' * 38}{R}")
-            continue
-
-        if user_input.lower() == "/clear":
-            show_banner()
             continue
 
         if user_input.lower() == "/approve" and pending_approval:
             result = await approve_command(pending_approval, session_id)
             pending_approval = None
-            space()
-            print(f"  {DIM}{'─' * 38}{R}")
             space()
             print(f"  {MGNT}{BOLD}Lumina  ›{R}  {WHITE}✅ Done:\n{result}{R}")
             space()
@@ -164,6 +168,21 @@ async def chat():
             pending_approval = None
             space()
             print(f"  {RED}❌ Command denied.{R}")
+            continue
+
+        # Handle skill commands
+        skill_response = handle_skill_command(user_input)
+        if skill_response is not None:
+            if skill_response.startswith("SKILL_ADD:"):
+                name = skill_response[len("SKILL_ADD:"):]
+                pending_skill_add = name
+                space()
+                print(f"  {MGNT}{BOLD}Lumina  ›{R}  Enter skill content for '{name}':")
+            else:
+                space()
+                print(f"  {MGNT}{BOLD}Lumina  ›{R}  {WHITE}{skill_response}{R}")
+            space()
+            print(f"  {DIM}{'─' * 38}{R}")
             continue
 
         space()

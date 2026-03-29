@@ -5,6 +5,7 @@ import os
 import sys
 sys.path.insert(0, os.path.expanduser("~/lumina"))
 from config.settings import SYSTEM_PROMPT, NAME, MAKER
+from core.skills import list_skills, install, remove
 
 AGENTS = {
     "main": {
@@ -35,6 +36,28 @@ AGENTS = {
         "session_prefix": "agent:coder"
     }
 }
+
+def handle_skill_command(user_input):
+    """Handle /skills commands. Returns response string or None if not a skill command."""
+    text = user_input.strip()
+
+    if text == "/skills":
+        skills = list_skills()
+        if not skills:
+            return "No skills installed. Use `/skill add name` to install one."
+        return "Installed skills:\n" + "\n".join(f"• {s}" for s in skills)
+
+    if text.startswith("/skill remove "):
+        name = text[len("/skill remove "):].strip()
+        return remove(name)
+
+    if text.startswith("/skill add "):
+        name = text[len("/skill add "):].strip()
+        if not name:
+            return "Usage: /skill add skill-name"
+        return f"SKILL_ADD:{name}"
+
+    return None
 
 def resolve(user_input):
     if user_input.startswith("/research "):
