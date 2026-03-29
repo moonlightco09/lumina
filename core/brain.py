@@ -14,8 +14,16 @@ from config.settings import (
     OLLAMA_MODEL, OLLAMA_PORT
 )
 from core.tools import SCHEMAS, execute
+from core.skills import load_all as load_skills
 
 server_process = None
+
+def build_system(system=None):
+    base = system or SYSTEM_PROMPT
+    skills = load_skills()
+    if skills:
+        return f"{base}\n\n---\n\n# Installed Skills\n\n{skills}"
+    return base
 
 def start_local():
     global server_process
@@ -42,7 +50,7 @@ def stop_local():
         server_process = None
 
 def ask_local(messages, system=None):
-    prompt = f"{system or SYSTEM_PROMPT}\n\n"
+    prompt = f"{build_system(system)}\n\n"
     for msg in messages:
         role = "You" if msg["role"] == "user" else "Lumina"
         prompt += f"{role}: {msg['content']}\n"
@@ -67,7 +75,9 @@ def ask_local(messages, system=None):
 def ask_ollama(messages, system=None):
     ollama_messages = []
     if system:
-        ollama_messages.append({"role": "system", "content": system})
+        ollama_messages.append({"role": "system", "content": build_system(system)})
+    else:
+        ollama_messages.append({"role": "system", "content": build_system()})
     for msg in messages:
         if isinstance(msg.get("content"), str):
             ollama_messages.append({
@@ -94,7 +104,7 @@ def ask_api(messages, system=None):
     data = json.dumps({
         "model": API_MODEL,
         "max_tokens": 1024,
-        "system": system or SYSTEM_PROMPT,
+        "system": build_system(system),
         "tools": SCHEMAS,
         "messages": messages
     }).encode()
@@ -114,7 +124,6 @@ def ask_api(messages, system=None):
 def detect_mode():
     if API_KEY:
         return "api"
-    # Check if Ollama is running
     try:
         urllib.request.urlopen(
             f"http://localhost:{OLLAMA_PORT}/api/tags", timeout=2
